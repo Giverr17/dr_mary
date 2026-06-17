@@ -1,0 +1,14 @@
+[
+    {
+        "icon": "biotech",
+        "title": "Inclusive Innovation",
+        "description": "Researching how technological advancements can be made accessible to all demographics.",
+        "order": 1
+    },
+    {
+        "icon": "eco",
+        "title": "Circular Economy",
+        "description": "Strategies for reducing waste and maximizing resource efficiency in industry.",
+        "order": 2
+    }
+]

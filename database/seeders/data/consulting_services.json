@@ -1,0 +1,18 @@
+[
+    {
+        "icon": "strategy",
+        "title": "Strategic Planning",
+        "description": "Helping organizations define their long-term vision and actionable steps.",
+        "bullet_points": ["Market Analysis", "SWOT Assessments", "Implementation Roadmaps"],
+        "is_popular": true,
+        "order": 1
+    },
+    {
+        "icon": "analytics",
+        "title": "Impact Evaluation",
+        "description": "Measuring the effectiveness of programs and initiatives.",
+        "bullet_points": ["Data Collection", "Statistical Analysis", "Reporting"],
+        "is_popular": false,
+        "order": 2
+    }
+]

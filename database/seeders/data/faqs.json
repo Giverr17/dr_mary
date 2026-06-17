@@ -1,0 +1,12 @@
+[
+    {
+        "question": "How can I book Dr. Isibor for a speaking engagement?",
+        "answer": "You can use the booking link on the contact page or email hello@druhunoma.com.",
+        "order": 1
+    },
+    {
+        "question": "Do you offer pro-bono consulting for non-profits?",
+        "answer": "Yes, a limited number of slots are available each year for high-impact non-profit projects.",
+        "order": 2
+    }
+]

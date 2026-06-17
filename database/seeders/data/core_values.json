@@ -1,0 +1,14 @@
+[
+    {
+        "icon": "verified",
+        "title": "Integrity",
+        "description": "Commitment to the highest standards of research ethics and professional conduct.",
+        "order": 1
+    },
+    {
+        "icon": "group",
+        "title": "Collaboration",
+        "description": "Belief that the best solutions come from diverse perspectives and joint efforts.",
+        "order": 2
+    }
+]

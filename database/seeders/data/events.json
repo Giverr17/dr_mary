@@ -1,0 +1,38 @@
+[
+    {
+        "title": "Global Sustainability Summit 2025",
+        "date_start": "2025-06-15",
+        "date_end": "2025-06-17",
+        "location": "New York, NY",
+        "time": "09:00 AM - 05:00 PM",
+        "description": "Leading the panel on circular economy implementation.",
+        "role": "Keynote Speaker",
+        "is_virtual": false,
+        "is_featured": true,
+        "registration_url": "https://summit2025.com/register",
+        "link_url": "https://summit2025.com",
+        "link_label": "Event Website",
+        "attendee_count": "500+",
+        "stats": {"Global Reach": "40+ Countries", "Media Mentions": "15"},
+        "status": "upcoming",
+        "order": 1
+    },
+    {
+        "title": "Research Symposium on Digital Ethics",
+        "date_start": "2024-11-10",
+        "date_end": null,
+        "location": "Virtual",
+        "time": "10:00 AM EST",
+        "description": "Presenting findings on algorithmic bias in policy making.",
+        "role": "Guest Lecturer",
+        "is_virtual": true,
+        "is_featured": false,
+        "registration_url": null,
+        "link_url": "https://university.edu/symposium",
+        "link_label": "Watch Recording",
+        "attendee_count": "200",
+        "stats": null,
+        "status": "past",
+        "order": 2
+    }
+]

@@ -1,0 +1,20 @@
+[
+    {
+        "title": "Sustainable Development in Emerging Markets",
+        "type": "Research Paper",
+        "year": 2024,
+        "abstract": "An analysis of sustainability practices in rapidly developing economies.",
+        "pdf_path": "publications/sustainable-dev.pdf",
+        "is_featured": true,
+        "order": 1
+    },
+    {
+        "title": "Policy Frameworks for Digital Transformation",
+        "type": "Policy Brief",
+        "year": 2023,
+        "abstract": "Recommendations for governments on managing digital economy transitions.",
+        "pdf_path": "publications/digital-policy.pdf",
+        "is_featured": true,
+        "order": 2
+    }
+]

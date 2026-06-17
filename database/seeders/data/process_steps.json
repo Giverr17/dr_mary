@@ -1,0 +1,17 @@
+[
+    {
+        "step_number": 1,
+        "title": "Discovery",
+        "description": "Initial meeting to understand goals and challenges."
+    },
+    {
+        "step_number": 2,
+        "title": "Analysis",
+        "description": "Deep dive into data and current processes."
+    },
+    {
+        "step_number": 3,
+        "title": "Strategy",
+        "description": "Developing a tailored plan for improvement."
+    }
+]
