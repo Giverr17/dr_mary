@@ -47,8 +47,8 @@ new class extends Component
         Register for Event
     </button>
 
-    <div x-show="$wire.isOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm">
-        <div @click.away="$wire.isOpen = false" class="bg-white rounded-[2rem] p-8 md:p-12 max-w-2xl w-full shadow-2xl relative">
+    <div x-show="$wire.isOpen" x-cloak class="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-4 bg-navy/60 backdrop-blur-sm overflow-y-auto">
+        <div @click.away="$wire.isOpen = false" class="bg-white rounded-[2rem] p-8 md:p-12 max-w-2xl w-full shadow-2xl relative my-auto max-h-[90vh] overflow-y-auto">
             <button @click="$wire.isOpen = false" class="absolute top-8 right-8 text-slate-400 hover:text-navy transition-colors">
                 <span class="material-symbols-outlined text-3xl">close</span>
             </button>

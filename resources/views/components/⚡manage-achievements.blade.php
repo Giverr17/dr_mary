@@ -273,7 +273,8 @@ new class extends Component {
     @endif
 
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto">
+        <table class="w-full min-w-[820px] text-left border-collapse">
             <thead>
                 <tr class="bg-slate-50 border-b border-slate-200">
                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Title & Issuing
@@ -350,5 +351,6 @@ new class extends Component {
                 @endforelse
             </tbody>
         </table>
+        </div>
     </div>
 </div>

@@ -50,7 +50,8 @@
             <a href="/manage/messages" class="text-sm font-bold text-primary hover:underline">View All</a>
         </div>
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-            <table class="w-full text-left border-collapse">
+            <div class="overflow-x-auto">
+            <table class="w-full min-w-[560px] text-left border-collapse">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-200">
                         <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">From</th>
@@ -83,6 +84,7 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </x-manage-layout>
