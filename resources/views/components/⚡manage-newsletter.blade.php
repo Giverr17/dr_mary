@@ -49,7 +49,7 @@ new class extends Component
 ?>
 
 <div>
-    <div class="mb-8 flex justify-between items-center">
+    <div class="mb-8 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 class="text-2xl font-display font-bold text-navy">Send Newsletter</h2>
         <div class="px-4 py-2 bg-primary/10 rounded-lg border border-primary/20">
             <span class="text-xs font-bold text-navy uppercase tracking-widest block">Total Subscribers</span>

@@ -147,7 +147,7 @@ new class extends Component
 ?>
 
 <div class="space-y-12 pb-20">
-    <div class="flex justify-between items-center">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <h2 class="text-2xl font-display font-bold text-navy">Professional Profile</h2>
         <button wire:click="save" class="px-8 py-3 bg-navy text-primary font-bold rounded-lg hover:opacity-90 transition-all shadow-lg">
             Save Changes
