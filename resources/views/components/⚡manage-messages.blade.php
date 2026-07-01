@@ -47,7 +47,7 @@ new class extends Component
             if (!$message->read_at) {
                 $message->update(['read_at' => now()]);
             }
-            $this->replySubject = 'Re: ' . ($message->subject ?? '');
+            $this->replySubject = 'Re: ' . ($message->subject?->value ?? '');
             $this->replyBody = "\n\n---\nOriginal message:\n" . ($message->body ?? '');
         }
         $this->loadMessages();
@@ -105,7 +105,7 @@ new class extends Component
                         </div>
                     </div>
                     <div class="flex-1 hidden md:block">
-                        <span class="text-sm font-medium text-slate-700">{{ $message->subject }}</span>
+                        <span class="text-sm font-medium text-slate-700">{{ $message->subject?->label() }}</span>
                     </div>
                     <div class="flex items-center gap-4">
                         @if($message->replied_at)
@@ -129,7 +129,7 @@ new class extends Component
                         <!-- Message Header -->
                         <div class="px-8 py-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <h3 class="text-lg font-display font-bold text-navy">{{ $message->subject }}</h3>
+                                <h3 class="text-lg font-display font-bold text-navy">{{ $message->subject?->label() }}</h3>
                                 <div class="flex items-center gap-2 mt-1">
                                     <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">From:</span>
                                     <span class="text-sm font-bold text-navy">{{ $message->name }}</span>

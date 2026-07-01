@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Enums\PublicationType;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
  * @property string $title
- * @property string $type
+ * @property PublicationType $type
  * @property int $year
  * @property string $abstract
  * @property string|null $pdf_path
@@ -24,5 +25,6 @@ class Publication extends Model
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'type' => PublicationType::class,
     ];
 }

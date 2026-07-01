@@ -67,7 +67,7 @@
                             <span class="block text-xs text-slate-500">{{ $message->email }}</span>
                         </td>
                         <td class="px-6 py-4">
-                            <span class="text-sm text-slate-700">{{ $message->subject }}</span>
+                            <span class="text-sm text-slate-700">{{ $message->subject?->label() }}</span>
                         </td>
                         <td class="px-6 py-4">
                             <span class="text-xs text-slate-500">{{ $message->created_at->format('M d, Y') }}</span>

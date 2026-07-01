@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\EventStatus;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -20,7 +21,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $link_label
  * @property string|null $attendee_count
  * @property array|null $stats
- * @property string $status
+ * @property EventStatus $status
  * @property int $order
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
@@ -39,6 +40,7 @@ class Event extends Model
         'is_virtual' => 'boolean',
         'is_featured' => 'boolean',
         'stats' => 'array',
+        'status' => EventStatus::class,
     ];
     public function registrations()
     {

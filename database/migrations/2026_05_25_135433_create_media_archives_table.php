@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->enum('media_type', ['video', 'audio']);
+            $table->string('media_type');
             $table->string('platform'); // 'youtube', 'spotify', 'vimeo', etc.
             $table->text('embed_url'); // Store full pasted URL
+            $table->text('audio_url')->nullable();
             $table->string('thumbnail_url')->nullable();
             $table->foreignId('event_id')->nullable()->constrained('events')->nullOnDelete();
             $table->string('duration')->nullable(); // e.g. "45:10" or "1 hr 15 mins"

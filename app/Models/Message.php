@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Enums\MessageSubject;
 use Illuminate\Database\Eloquent\Model;
 
 /**
  * @property int $id
  * @property string $name
  * @property string $email
- * @property string $subject
+ * @property MessageSubject $subject
  * @property string|null $organization
  * @property string $body
  * @property \Illuminate\Support\Carbon|null $read_at
@@ -24,5 +25,6 @@ class Message extends Model
     protected $casts = [
         'read_at' => 'datetime',
         'replied_at' => 'datetime',
+        'subject' => MessageSubject::class,
     ];
 }

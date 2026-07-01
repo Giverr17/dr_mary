@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PublicationType;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -14,7 +15,7 @@ return new class extends Migration
         Schema::create('publications', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->enum('type', ['Research Paper', 'Policy Brief', 'Book Chapter', 'Working Paper', 'Journal Article'])->default('Research Paper');
+            $table->string('type')->default(PublicationType::ResearchPaper->value);
             $table->year('year');
             $table->text('abstract');
             $table->string('pdf_path')->nullable();

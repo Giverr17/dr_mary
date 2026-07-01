@@ -85,8 +85,8 @@
                                     'Recognition' => 'bg-blue-50 text-blue-700 border border-blue-200/50',
                                     'Fellowship' => 'bg-purple-50 text-purple-700 border border-purple-200/50',
                                     'Certification' => 'bg-green-50 text-green-700 border border-green-200/50',
-                                ][$achievement->category] ?? 'bg-slate-50 text-slate-700 border border-slate-200/50' }}">
-                                {{ $achievement->category }}
+                                ][$achievement->category->value] ?? 'bg-slate-50 text-slate-700 border border-slate-200/50' }}">
+                                {{ $achievement->category->label() }}
                             </span>
                             <span class="text-sm font-bold text-primary">{{ $achievement->year }}</span>
                         </div>
@@ -125,7 +125,7 @@
                                 'Fellowship' => 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=150',
                                 'Certification' => 'https://images.unsplash.com/photo-1589330273594-fade1ee91647?q=80&w=150',
                             ];
-                            $fallbackImage = $fallbackImages[$achievement->category] ?? 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=150';
+                            $fallbackImage = $fallbackImages[$achievement->category->value] ?? 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=150';
                         @endphp
                         <a href="{{ $achievement->link_url }}" target="_blank" class="block rounded-xl overflow-hidden border border-slate-100 bg-slate-50/50 hover:bg-slate-50 hover:border-primary/20 transition-all flex gap-3 p-2.5 group/preview select-none">
                             <div class="w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 border border-slate-200/50">

@@ -2,7 +2,9 @@
 
 use Livewire\Component;
 use Livewire\Attributes\Validate;
+use App\Enums\MessageSubject;
 use App\Models\Message;
+use Illuminate\Validation\Rule;
 
 new class extends Component
 {
@@ -12,7 +14,6 @@ new class extends Component
     #[Validate('required|email')]
     public $email = '';
 
-    #[Validate('required')]
     public $subject = '';
 
     public $organization = '';
@@ -21,6 +22,13 @@ new class extends Component
     public $body = '';
 
     public $success = false;
+
+    public function rules()
+    {
+        return [
+            'subject' => ['required', Rule::enum(MessageSubject::class)],
+        ];
+    }
 
     public function save()
     {
@@ -72,11 +80,9 @@ new class extends Component
                     <label class="text-xs font-bold text-navy uppercase tracking-widest">Subject</label>
                     <select wire:model="subject" class="w-full px-5 py-3 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all">
                         <option value="">Select a subject</option>
-                        <option value="Consulting Inquiry">Consulting Inquiry</option>
-                        <option value="Speaking Engagement">Speaking Engagement</option>
-                        <option value="Research Collaboration">Research Collaboration</option>
-                        <option value="Media / Press Inquiry">Media / Press Inquiry</option>
-                        <option value="Other">Other</option>
+                        @foreach(\App\Enums\MessageSubject::cases() as $case)
+                            <option value="{{ $case->value }}">{{ $case->label() }}</option>
+                        @endforeach
                     </select>
                     @error('subject') <span class="text-xs text-red-500 font-medium">{{ $message }}</span> @enderror
                 </div>

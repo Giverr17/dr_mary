@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\EventStatus;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->string('location');
             $table->string('time')->nullable();
             $table->text('description')->nullable();
+            $table->string('image_path')->nullable();
             $table->string('role')->nullable();
             $table->boolean('is_virtual')->default(false);
             $table->boolean('is_featured')->default(false);
@@ -27,7 +29,7 @@ return new class extends Migration
             $table->string('link_label')->nullable();
             $table->string('attendee_count')->nullable();
             $table->json('stats')->nullable();
-            $table->enum('status', ['upcoming', 'past'])->default('upcoming');
+            $table->string('status')->default(EventStatus::Upcoming->value);
             $table->integer('order')->default(0);
             $table->timestamps();
         });

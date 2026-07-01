@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\AchievementCategory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,6 +29,7 @@ class Achievement extends Model
         'is_featured' => 'boolean',
         'year' => 'integer',
         'order' => 'integer',
+        'category' => AchievementCategory::class,
     ];
 
     /**

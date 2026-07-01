@@ -30,6 +30,7 @@ return new class extends Migration
             $table->string('scholar_url');
             $table->string('linkedin_url');
             $table->string('booking_url');
+            $table->json('social_links')->nullable();
             $table->string('photo_path')->nullable();
             $table->string('speaker_kit_path')->nullable();
             $table->text('footer_tagline');

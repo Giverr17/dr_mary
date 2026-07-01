@@ -222,7 +222,7 @@
                 </div>
                 @endforeach
             </div>
-        </div>y
+        </div>
     </section>
     @endif
 

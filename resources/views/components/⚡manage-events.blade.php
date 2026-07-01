@@ -3,16 +3,21 @@
 use Livewire\Component;
 use Livewire\WithFileUploads;
 use Livewire\Attributes\Validate;
+use App\Enums\EventStatus;
 use App\Models\Event;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
-new class extends Component
-{
+new class extends Component {
     use WithFileUploads;
 
     public $events;
     public $isEditing = false;
     public $editingId = null;
+
+    public $aiRawText = '';
+    public $aiWarnings = [];
+    public $aiMessage = '';
 
     #[Validate('required')]
     public $title = '';
@@ -32,8 +37,15 @@ new class extends Component
     public $link_url = '';
     public $link_label = '';
     public $attendee_count = '';
-    public $status = 'upcoming';
+    public $status = EventStatus::Upcoming->value;
     public $order = 0;
+
+    public function rules()
+    {
+        return [
+            'status' => ['required', Rule::enum(EventStatus::class)],
+        ];
+    }
 
     public function mount()
     {
@@ -46,6 +58,52 @@ new class extends Component
         $this->events = Event::orderBy('date_start', 'desc')->get();
     }
 
+    public function aiStructure(\App\Services\AiService $ai)
+    {
+        $this->aiWarnings = [];
+        $this->aiMessage = '';
+
+        if (strlen(trim($this->aiRawText)) < 15) {
+            $this->aiMessage = 'Please paste an event description first.';
+            return;
+        }
+
+        $result = $ai->structureEvent($this->aiRawText);
+
+        if (!$result['success']) {
+            $this->aiMessage = $result['message'];
+            return;
+        }
+
+        // Fill the review buffer (form fields) — admin still commits via save().
+        if ($result['title'])
+            $this->title = $result['title'];
+        if ($result['date_start'])
+            $this->date_start = $result['date_start'];
+        if ($result['date_end'])
+            $this->date_end = $result['date_end'];
+        if ($result['location'])
+            $this->location = $result['location'];
+        if ($result['time'])
+            $this->time = $result['time'];
+        if ($result['description'])
+            $this->description = $result['description'];
+        if ($result['role'])
+            $this->role = $result['role'];
+        if ($result['attendee_count'])
+            $this->attendee_count = $result['attendee_count'];
+        $this->is_virtual = $result['is_virtual'];
+
+        // Derive status from the date — NOT from the AI. Pure logic.
+        if ($result['date_start']) {
+            $this->status = $result['date_start'] < date('Y-m-d')
+                ? \App\Enums\EventStatus::Past->value
+                : \App\Enums\EventStatus::Upcoming->value;
+        }
+
+        $this->aiWarnings = $result['warnings'];
+        $this->aiMessage = $result['message'];
+    }
     public function edit($id)
     {
         $event = Event::find($id);
@@ -64,7 +122,7 @@ new class extends Component
         $this->link_url = $event->link_url;
         $this->link_label = $event->link_label;
         $this->attendee_count = $event->attendee_count;
-        $this->status = $event->status;
+        $this->status = $event->status->value;
         $this->order = $event->order;
         $this->isEditing = true;
     }
@@ -122,9 +180,9 @@ new class extends Component
 
     public function resetForm()
     {
-        $this->reset(['title', 'date_start', 'date_end', 'location', 'time', 'description', 'image', 'image_path', 'role', 'is_virtual', 'is_featured', 'registration_url', 'link_url', 'link_label', 'attendee_count', 'status', 'order', 'isEditing', 'editingId']);
+        $this->reset(['title', 'date_start', 'date_end', 'location', 'time', 'description', 'image', 'image_path', 'role', 'is_virtual', 'is_featured', 'registration_url', 'link_url', 'link_label', 'attendee_count', 'status', 'order', 'isEditing', 'editingId', 'aiRawText', 'aiWarnings', 'aiMessage']);
         $this->date_start = date('Y-m-d');
-        $this->status = 'upcoming';
+        $this->status = EventStatus::Upcoming->value;
     }
 };
 ?>
@@ -132,119 +190,176 @@ new class extends Component
 <div>
     <div class="flex justify-between items-center mb-8">
         <h2 class="text-2xl font-display font-bold text-navy">Manage Events</h2>
-        <button wire:click="{{ $isEditing ? 'resetForm' : '$set(\'isEditing\', true)' }}" class="px-4 py-2 bg-navy text-primary font-bold rounded-lg hover:opacity-90 transition-all text-sm">
+        <button wire:click="{{ $isEditing ? 'resetForm' : '$set(\'isEditing\', true)' }}"
+            class="px-4 py-2 bg-navy text-primary font-bold rounded-lg hover:opacity-90 transition-all text-sm">
             {{ $isEditing ? 'Cancel' : 'Add New Event' }}
         </button>
     </div>
 
     @if($isEditing)
-    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm mb-12">
-        <form wire:submit="save" class="space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Event Title</label>
-                    <input wire:model="title" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
-                </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Location</label>
-                    <input wire:model="location" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
-                </div>
-            </div>
+        <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm mb-12">
+            <form wire:submit="save" class="space-y-6">
+                <div class="bg-primary/5 border border-primary/20 rounded-xl p-5 space-y-3">
+                    <label class="text-xs font-bold text-navy uppercase tracking-widest flex items-center gap-2">
+                        <span>✨</span> AI Assist — paste an event description
+                    </label>
+                    <textarea wire:model="aiRawText" rows="3"
+                        placeholder="Paste an announcement, invitation, or rough notes and let AI structure it…"
+                        class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none resize-none text-sm"></textarea>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Start Date</label>
-                    <input wire:model="date_start" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
-                </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">End Date (Optional)</label>
-                    <input wire:model="date_end" type="date" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
-                </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Status</label>
-                    <select wire:model="status" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none">
-                        <option value="upcoming">Upcoming</option>
-                        <option value="past">Past</option>
-                    </select>
-                </div>
-            </div>
+                    <button type="button" wire:click="aiStructure" wire:loading.attr="disabled"
+                        class="px-5 py-2 bg-primary text-navy font-bold rounded-lg hover:opacity-90 transition-all text-sm disabled:opacity-50 flex items-center gap-2">
+                        <span wire:loading.remove wire:target="aiStructure">✨ Structure with AI</span>
+                        <span wire:loading wire:target="aiStructure">Thinking…</span>
+                    </button>
 
-            <div class="flex gap-8">
-                <div class="flex items-center gap-2">
-                    <input wire:model="is_featured" type="checkbox" id="is_featured_event" class="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary" />
-                    <label for="is_featured_event" class="text-xs font-bold text-navy uppercase tracking-widest cursor-pointer">Featured</label>
-                </div>
-                <div class="flex items-center gap-2">
-                    <input wire:model="is_virtual" type="checkbox" id="is_virtual" class="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary" />
-                    <label for="is_virtual" class="text-xs font-bold text-navy uppercase tracking-widest cursor-pointer">Virtual Event</label>
-                </div>
-            </div>
+                    @if($aiMessage)
+                        <p class="text-xs text-slate-600">{{ $aiMessage }}</p>
+                    @endif
 
-            <div class="space-y-2">
-                <label class="text-xs font-bold text-navy uppercase tracking-widest">Short Description</label>
-                <textarea wire:model="description" rows="3" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none resize-none"></textarea>
-            </div>
-
-            <div class="space-y-2">
-                <label class="text-xs font-bold text-navy uppercase tracking-widest">Event Header Image</label>
-                <input type="file" wire:model="image" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all" />
-                @if($image)
-                    <div class="mt-2 relative w-full h-40 rounded-lg overflow-hidden">
-                        <img src="{{ $image->temporaryUrl() }}" class="w-full h-full object-cover">
+                    @if(count($aiWarnings))
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-1">
+                            <p class="text-[10px] font-bold text-amber-700 uppercase tracking-widest">Please review</p>
+                            @foreach($aiWarnings as $warning)
+                                <p class="text-xs text-amber-700">• {{ $warning }}</p>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">Event Title</label>
+                        <input wire:model="title" type="text"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
                     </div>
-                @elseif($image_path)
-                    <div class="mt-2 relative w-full h-40 rounded-lg overflow-hidden">
-                        <img src="{{ Storage::url($image_path) }}" class="w-full h-full object-cover">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">Location</label>
+                        <input wire:model="location" type="text"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
                     </div>
-                @endif
-            </div>
+                </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Your Role</label>
-                    <input wire:model="role" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Keynote Speaker" />
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">Start Date</label>
+                        <input wire:model="date_start" type="date"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">End Date (Optional)</label>
+                        <input wire:model="date_end" type="date"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">Status</label>
+                        <select wire:model="status"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none">
+                            @foreach(\App\Enums\EventStatus::cases() as $case)
+                                <option value="{{ $case->value }}">{{ $case->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Attendance / Attendee Count</label>
-                    <input wire:model="attendee_count" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. 500+ attendees" />
-                </div>
-            </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">External Registration URL (Optional)</label>
-                    <input wire:model="registration_url" type="url" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. https://summit2025.com/register" />
+                <div class="flex gap-8">
+                    <div class="flex items-center gap-2">
+                        <input wire:model="is_featured" type="checkbox" id="is_featured_event"
+                            class="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary" />
+                        <label for="is_featured_event"
+                            class="text-xs font-bold text-navy uppercase tracking-widest cursor-pointer">Featured</label>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input wire:model="is_virtual" type="checkbox" id="is_virtual"
+                            class="w-4 h-4 text-primary border-slate-300 rounded focus:ring-primary" />
+                        <label for="is_virtual"
+                            class="text-xs font-bold text-navy uppercase tracking-widest cursor-pointer">Virtual
+                            Event</label>
+                    </div>
                 </div>
-                <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">External Link URL (e.g. Recap or Post-event link)</label>
-                    <input wire:model="link_url" type="url" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
-                </div>
-            </div>
 
-            <div class="grid grid-cols-1 gap-6">
                 <div class="space-y-2">
-                    <label class="text-xs font-bold text-navy uppercase tracking-widest">External Link Label (Optional)</label>
-                    <input wire:model="link_label" type="text" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Watch Recording, Event Website" />
+                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Short Description</label>
+                    <textarea wire:model="description" rows="3"
+                        class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none resize-none"></textarea>
                 </div>
-            </div>
 
-            <div class="flex gap-4">
-                <button type="submit" class="px-8 py-3 bg-navy text-primary font-bold rounded-lg hover:opacity-90 transition-all">
-                    {{ $editingId ? 'Update Event' : 'Create Event' }}
-                </button>
-                <button type="button" wire:click="resetForm" class="px-8 py-3 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-all">
-                    Cancel
-                </button>
-            </div>
-        </form>
-    </div>
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-navy uppercase tracking-widest">Event Header Image</label>
+                    <input type="file" wire:model="image"
+                        class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all" />
+                    @if($image)
+                        <div class="mt-2 relative w-full h-40 rounded-lg overflow-hidden">
+                            <img src="{{ $image->temporaryUrl() }}" class="w-full h-full object-cover">
+                        </div>
+                    @elseif($image_path)
+                        <div class="mt-2 relative w-full h-40 rounded-lg overflow-hidden">
+                            <img src="{{ Storage::url($image_path) }}" class="w-full h-full object-cover">
+                        </div>
+                    @endif
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">Your Role</label>
+                        <input wire:model="role" type="text"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none"
+                            placeholder="e.g. Keynote Speaker" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">Attendance / Attendee
+                            Count</label>
+                        <input wire:model="attendee_count" type="text"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none"
+                            placeholder="e.g. 500+ attendees" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">External Registration URL
+                            (Optional)</label>
+                        <input wire:model="registration_url" type="url"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none"
+                            placeholder="e.g. https://summit2025.com/register" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">External Link URL (e.g. Recap
+                            or Post-event link)</label>
+                        <input wire:model="link_url" type="url"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-navy uppercase tracking-widest">External Link Label
+                            (Optional)</label>
+                        <input wire:model="link_label" type="text"
+                            class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none"
+                            placeholder="e.g. Watch Recording, Event Website" />
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="submit"
+                        class="px-8 py-3 bg-navy text-primary font-bold rounded-lg hover:opacity-90 transition-all">
+                        {{ $editingId ? 'Update Event' : 'Create Event' }}
+                    </button>
+                    <button type="button" wire:click="resetForm"
+                        class="px-8 py-3 bg-slate-100 text-slate-600 font-bold rounded-lg hover:bg-slate-200 transition-all">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
     @endif
 
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <table class="w-full text-left border-collapse">
             <thead>
                 <tr class="bg-slate-50 border-b border-slate-200">
-                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event & Date</th>
+                    <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event & Date
+                    </th>
                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location</th>
                     <th class="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                     <th class="px-6 py-4"></th>
@@ -252,32 +367,39 @@ new class extends Component
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @foreach($events as $event)
-                <tr class="{{ $event->status === 'past' ? 'opacity-60' : '' }}">
-                    <td class="px-6 py-4">
-                        <span class="block font-bold text-navy">{{ $event->title }}</span>
-                        <span class="block text-xs text-slate-500">{{ $event->date_start->format('M d, Y') }}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="text-sm text-slate-700">{{ $event->location }}</span>
-                        @if($event->is_virtual) <span class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full uppercase font-bold">Virtual</span> @endif
-                    </td>
-                    <td class="px-6 py-4">
-                        <span class="px-2 py-1 {{ $event->status === 'upcoming' ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600' }} text-[10px] font-bold rounded-full uppercase tracking-widest">{{ $event->status }}</span>
-                    </td>
-                    <td class="px-6 py-4 text-right">
-                        <div class="flex justify-end gap-2">
-                            <a href="{{ route('admin.events.registrations.pdf', $event->id) }}" class="p-2 text-slate-400 hover:text-primary transition-colors" title="Download Registrations">
-                                <span class="material-symbols-outlined text-lg">download</span>
-                            </a>
-                            <button wire:click="edit({{ $event->id }})" class="p-2 text-slate-400 hover:text-primary transition-colors">
-                                <span class="material-symbols-outlined text-lg">edit</span>
-                            </button>
-                            <button wire:confirm="Delete this event?" wire:click="delete({{ $event->id }})" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                                <span class="material-symbols-outlined text-lg">delete</span>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
+                    <tr class="{{ $event->status === \App\Enums\EventStatus::Past ? 'opacity-60' : '' }}">
+                        <td class="px-6 py-4">
+                            <span class="block font-bold text-navy">{{ $event->title }}</span>
+                            <span class="block text-xs text-slate-500">{{ $event->date_start->format('M d, Y') }}</span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm text-slate-700">{{ $event->location }}</span>
+                            @if($event->is_virtual) <span
+                                class="ml-2 text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full uppercase font-bold">Virtual</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4">
+                            <span
+                                class="px-2 py-1 {{ $event->status === \App\Enums\EventStatus::Upcoming ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-600' }} text-[10px] font-bold rounded-full uppercase tracking-widest">{{ $event->status->label() }}</span>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                <a href="{{ route('admin.events.registrations.pdf', $event->id) }}"
+                                    class="p-2 text-slate-400 hover:text-primary transition-colors"
+                                    title="Download Registrations">
+                                    <span class="material-symbols-outlined text-lg">download</span>
+                                </a>
+                                <button wire:click="edit({{ $event->id }})"
+                                    class="p-2 text-slate-400 hover:text-primary transition-colors">
+                                    <span class="material-symbols-outlined text-lg">edit</span>
+                                </button>
+                                <button wire:confirm="Delete this event?" wire:click="delete({{ $event->id }})"
+                                    class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                                    <span class="material-symbols-outlined text-lg">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
                 @endforeach
             </tbody>
         </table>

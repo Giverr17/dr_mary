@@ -45,7 +45,7 @@ new class extends Component
         $this->editingId = $id;
         $this->title = $item->title;
         $this->description = $item->description;
-        $this->media_type = $item->media_type;
+        $this->media_type = $item->media_type->value;
         $this->embed_url = $item->embed_url ?: '';
         $this->audio_url = $item->audio_url ?: '';
         $this->thumbnail_url = $item->thumbnail_url ?: '';

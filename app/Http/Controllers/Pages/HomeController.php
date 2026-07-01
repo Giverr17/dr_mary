@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Pages;
 
+use App\Enums\EventStatus;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,7 @@ class HomeController extends Controller
             'profile' => \App\Models\Profile::first(),
             'focusAreas' => \App\Models\ResearchFocusArea::orderBy('order')->get(),
             'services' => \App\Models\ConsultingService::orderBy('order')->take(3)->get(),
-            'featuredEvent' => \App\Models\Event::where('is_featured', true)->where('status', 'upcoming')->first(),
+            'featuredEvent' => \App\Models\Event::where('is_featured', true)->where('status', EventStatus::Upcoming)->first(),
             'featuredPublications' => \App\Models\Publication::where('is_featured', true)->orderBy('order')->take(3)->get(),
         ]);
     }

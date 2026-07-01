@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\MessageSubject;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,10 +16,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email');
-            $table->enum('subject', ['Consulting Inquiry', 'Speaking Engagement', 'Research Collaboration', 'Media / Press Inquiry', 'Other'])->default('Other');
+            $table->string('subject')->default(MessageSubject::Other->value);
             $table->string('organization')->nullable();
             $table->text('body');
             $table->timestamp('read_at')->nullable();
+            $table->timestamp('replied_at')->nullable();
             $table->timestamps();
         });
     }

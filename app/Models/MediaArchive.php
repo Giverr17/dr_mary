@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MediaType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -28,6 +29,7 @@ class MediaArchive extends Model
         'is_featured' => 'boolean',
         'recorded_at' => 'date',
         'order' => 'integer',
+        'media_type' => MediaType::class,
     ];
 
     public function event()

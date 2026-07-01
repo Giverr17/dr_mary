@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 
 class ContentSeeder extends Seeder
 {
@@ -30,22 +31,32 @@ class ContentSeeder extends Seeder
 
         $data = json_decode(file_get_contents($path), true);
 
+        // TRUNCATE is blocked by MySQL when the table is referenced by a foreign
+        // key (e.g. events <- event_registrations / media_archives), so disable
+        // constraint checks around it.
+        Schema::disableForeignKeyConstraints();
         $modelClass::truncate();
+        Schema::enableForeignKeyConstraints();
 
         $now = now();
 
-        if ($isSingleton) {
-            $data['created_at'] = $now;
-            $data['updated_at'] = $now;
-            $modelClass::insert($data);
-        } else {
-            $rows = array_map(function ($item) use ($now) {
-                $item['created_at'] = $now;
-                $item['updated_at'] = $now;
-                return $item;
-            }, $data);
+        // The query-builder insert() used below bypasses Eloquent casts, so any
+        // array value (json/array-cast columns) must be encoded to a string here.
+        $prepare = function (array $row) use ($now) {
+            foreach ($row as $key => $value) {
+                if (\is_array($value)) {
+                    $row[$key] = json_encode($value);
+                }
+            }
+            $row['created_at'] = $now;
+            $row['updated_at'] = $now;
+            return $row;
+        };
 
-            $modelClass::insert($rows);
+        if ($isSingleton) {
+            $modelClass::insert($prepare($data));
+        } else {
+            $modelClass::insert(array_map($prepare, $data));
         }
     }
 }
