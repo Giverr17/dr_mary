@@ -34,8 +34,11 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-    'gemini' => [
-    'model' => env('GEMINI_MODEL', 'gemini-2.5-flash'),
-],
+    'ai' => [
+        // Primary provider — Gemini (API key resolved by Prism via GEMINI_API_KEY)
+        'model'          => env('AI_MODEL', 'gemini-2.5-flash'),
+        // Fallback provider — Groq (auto-used when Gemini rate-limits or fails)
+        'fallback_model' => env('AI_FALLBACK_MODEL', 'llama-3.3-70b-versatile'),
+    ],
 
 ];

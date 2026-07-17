@@ -3,13 +3,165 @@
 namespace App\Services;
 
 use App\Enums\PublicationType;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Log;
-use Prism\Prism\Facades\Prism;
+use Illuminate\Support\Str;
 use Prism\Prism\Enums\Provider;
+use Prism\Prism\Exceptions\PrismProviderOverloadedException;
+use Prism\Prism\Exceptions\PrismRateLimitedException;
+use Prism\Prism\Exceptions\PrismRequestTooLargeException;
+use Prism\Prism\Exceptions\PrismServerException;
+use Prism\Prism\Facades\Prism;
 use Throwable;
 
 class AiService
 {
+    // ──────────────────────────────────────────────────────────────────────────
+    // Core fallback engine
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Single entry point for every AI text call.
+     *
+     * Fallback chain:
+     *   1. PRIMARY  = Gemini (config: services.ai.model).
+     *      Retried up to 3× on transient blips with exponential backoff + jitter.
+     *   2. FALLBACK = Groq  (config: services.ai.fallback_model).
+     *      Used once if Gemini is rate-limited or all retries are exhausted.
+     *
+     * API keys are resolved by Prism from config/prism.php
+     * (GEMINI_API_KEY / GROQ_API_KEY).
+     */
+    private function runPrompt(string $prompt): string
+    {
+        $primaryModel  = config('services.ai.model', 'gemini-2.5-flash');
+        $fallbackModel = config('services.ai.fallback_model', 'llama-3.3-70b-versatile');
+
+        // ── PRIMARY: Gemini, bounded exponential backoff + jitter ────────────
+        $maxAttempts = 3;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                return $this->callPrism(Provider::Gemini, $primaryModel, $prompt);
+            } catch (Throwable $e) {
+                $rateLimited = $e instanceof PrismRateLimitedException;
+
+                // Retry only on transient non-rate-limit blips (250 ms, 500 ms …)
+                if ($attempt < $maxAttempts && !$rateLimited && $this->isTransient($e)) {
+                    usleep((int) (250_000 * (2 ** ($attempt - 1))) + random_int(0, 250_000));
+                    continue;
+                }
+
+                // Rate-limited or transient error that outlived all retries → failover
+                if ($rateLimited || $this->isTransient($e)) {
+                    break;
+                }
+
+                // Any other error (auth, bad request, etc.) — bubble up unchanged
+                throw $e;
+            }
+        }
+
+        // ── FALLBACK: Groq, single attempt ───────────────────────────────────
+        Log::warning('AiService failover: Gemini → Groq', [
+            'primary_model'  => $primaryModel,
+            'fallback_model' => $fallbackModel,
+        ]);
+
+        return $this->callPrism(Provider::Groq, $fallbackModel, $prompt);
+    }
+
+    /**
+     * Same as runPrompt() but attaches a document (e.g. a PDF) to the request.
+     * Falls back to Groq on Gemini failures; note that Groq does not support
+     * document inputs, so the fallback is text-only from the prompt.
+     */
+    private function runPromptWithDocument(string $prompt, string $filePath): string
+    {
+        $primaryModel  = config('services.ai.model', 'gemini-2.5-flash');
+        $fallbackModel = config('services.ai.fallback_model', 'llama-3.3-70b-versatile');
+
+        $maxAttempts = 3;
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $response = Prism::text()
+                    ->using(Provider::Gemini, $primaryModel)
+                    ->withPrompt($prompt, [
+                        \Prism\Prism\ValueObjects\Media\Document::fromLocalPath($filePath),
+                    ])
+                    ->withClientOptions(['timeout' => 30, 'connect_timeout' => 5])
+                    ->asText();
+
+                return trim($response->text);
+            } catch (Throwable $e) {
+                $rateLimited = $e instanceof PrismRateLimitedException;
+
+                if ($attempt < $maxAttempts && !$rateLimited && $this->isTransient($e)) {
+                    usleep((int) (250_000 * (2 ** ($attempt - 1))) + random_int(0, 250_000));
+                    continue;
+                }
+
+                if ($rateLimited || $this->isTransient($e)) {
+                    break;
+                }
+
+                throw $e;
+            }
+        }
+
+        // Groq fallback — text-only (no document), Groq cannot read PDFs
+        Log::warning('AiService PDF failover: Gemini → Groq (text-only)', [
+            'primary_model'  => $primaryModel,
+            'fallback_model' => $fallbackModel,
+        ]);
+
+        return $this->callPrism(Provider::Groq, $fallbackModel, $prompt);
+    }
+
+    /** One Prism text call against a specific provider + model. */
+    private function callPrism(Provider $provider, string $model, string $prompt): string
+    {
+        $response = Prism::text()
+            ->using($provider, $model)
+            ->withPrompt($prompt)
+            ->withClientOptions(['timeout' => 30, 'connect_timeout' => 5])
+            ->asText();
+
+        return trim($response->text);
+    }
+
+    /** Returns true for errors that are worth retrying (busy / transient). */
+    private function isTransient(Throwable $e): bool
+    {
+        if (
+            $e instanceof PrismProviderOverloadedException
+            || $e instanceof PrismServerException
+            || $e instanceof PrismRateLimitedException
+            || $e instanceof ConnectionException
+        ) {
+            return true;
+        }
+
+        $msg = strtolower($e->getMessage());
+        return Str::contains($msg, [
+            'overloaded', 'curl error', 'unexpected eof', 'ssl',
+            'timed out', 'rate', 'quota', 'resource has been exhausted',
+        ]);
+    }
+
+    /** Strip the model's JSON fences and return decoded array or null. */
+    private function decodeJson(string $raw): ?array
+    {
+        $clean = trim($raw);
+        $clean = preg_replace('/^```(?:json)?\s*/i', '', $clean);
+        $clean = preg_replace('/\s*```$/', '', $clean);
+        $data  = json_decode(trim($clean), true);
+        return is_array($data) ? $data : null;
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Public methods
+    // ──────────────────────────────────────────────────────────────────────────
+
     /**
      * Structure a raw publication citation/description into form fields.
      *
@@ -17,27 +169,26 @@ class AiService
      * [
      *   'success'  => bool,
      *   'title'    => string|null,
-     *   'type'     => string|null,   // a valid PublicationType value, or null if AI's guess was invalid
+     *   'type'     => string|null,   // a valid PublicationType value, or null
      *   'year'     => int|null,
      *   'abstract' => string|null,
-     *   'warnings' => string[],      // human-readable flags for anything ambiguous/invalid
-     *   'message'  => string,        // status message for the admin
+     *   'warnings' => string[],
+     *   'message'  => string,
      * ]
      */
     public function structurePublication(string $rawText): array
     {
-        // Build the list of valid types from the enum — single source of truth.
         $validTypes = array_map(fn ($c) => $c->value, PublicationType::cases());
-        $typeList = implode(', ', $validTypes);
+        $typeList   = implode(', ', $validTypes);
 
         $prompt = <<<PROMPT
         You are a metadata extraction assistant for an academic portfolio.
         Extract structured publication data from the text below.
-        
 
         Return ONLY a JSON object (no markdown, no code fences, no commentary) with these exact keys:
         - "title": the full publication title as a string.
-        - "type": MUST be exactly one of these values: {$typeList}. Use "Journal Article" if it appeared in a named journal; "Working Paper" or "Policy Brief" for non-peer-reviewed institutional output; "Book Chapter" if part of an edited volume; otherwise "Research Paper".        - "year": the 4-digit publication year as an integer. If not found, use null.
+        - "type": MUST be exactly one of these values: {$typeList}. Use "Journal Article" if it appeared in a named journal; "Working Paper" or "Policy Brief" for non-peer-reviewed institutional output; "Book Chapter" if part of an edited volume; otherwise "Research Paper".
+        - "year": the 4-digit publication year as an integer. If not found, use null.
         - "abstract": a concise 2-4 sentence summary or the abstract if present. If none exists, write a brief neutral summary from the title.
 
         If a field cannot be determined, set it to null. Do not invent a DOI, authors, or facts not present.
@@ -47,43 +198,27 @@ class AiService
         PROMPT;
 
         try {
-            $model = config('services.gemini.model');
+            $data = $this->decodeJson($this->runPrompt($prompt));
 
-            $response = Prism::text()
-                ->using(Provider::Gemini, $model)
-                ->withPrompt($prompt)
-                ->asText()
-                ->text;
-
-            // Strip ```json fences if the model added them despite instructions.
-            $clean = trim($response);
-            $clean = preg_replace('/^```(?:json)?\s*/i', '', $clean);
-            $clean = preg_replace('/\s*```$/', '', $clean);
-
-            $data = json_decode($clean, true);
-
-            if (! is_array($data)) {
-                Log::warning('AiService: publication JSON decode failed', ['raw' => $response]);
+            if ($data === null) {
+                Log::warning('AiService: publication JSON decode failed');
                 return $this->failure('AI returned an unreadable response — please fill the form manually.');
             }
 
             $warnings = [];
 
-            // --- Validate title ---
             $title = isset($data['title']) ? trim((string) $data['title']) : null;
-            if (! $title) {
+            if (!$title) {
                 $warnings[] = 'Could not extract a title — please add one.';
             }
 
-            // --- Validate type against the real enum (single source of truth) ---
             $rawType = $data['type'] ?? null;
-            $type = PublicationType::tryFrom((string) $rawType)?->value;
-            if (! $type) {
-                $warnings[] = "AI suggested an unrecognized type" . ($rawType ? " (\"{$rawType}\")" : '') . " — defaulted to the first type; please confirm.";
+            $type    = PublicationType::tryFrom((string) $rawType)?->value;
+            if (!$type) {
+                $warnings[] = 'AI suggested an unrecognized type' . ($rawType ? " (\"{$rawType}\")" : '') . ' — defaulted to the first type; please confirm.';
                 $type = $validTypes[0] ?? null;
             }
 
-            // --- Validate year ---
             $year = null;
             if (isset($data['year']) && is_numeric($data['year'])) {
                 $year = (int) $data['year'];
@@ -95,9 +230,8 @@ class AiService
                 $warnings[] = 'Could not determine the year — please add it.';
             }
 
-            // --- Abstract ---
             $abstract = isset($data['abstract']) ? trim((string) $data['abstract']) : null;
-            if (! $abstract || strlen($abstract) < 10) {
+            if (!$abstract || strlen($abstract) < 10) {
                 $warnings[] = 'Abstract is missing or too short — please review.';
             }
 
@@ -111,10 +245,7 @@ class AiService
                 'message'  => 'AI filled the form below — review and edit before saving.',
             ];
         } catch (Throwable $e) {
-            Log::error('AiService: publication structuring failed', [
-                'message' => $e->getMessage(),
-            ]);
-
+            Log::error('AiService: publication structuring failed', ['message' => $e->getMessage()]);
             return $this->failure('AI is busy right now — please fill the form manually.');
         }
     }
@@ -135,9 +266,6 @@ class AiService
     /**
      * Structure a raw event description into form fields.
      *
-     * Note: status (upcoming/past) is NOT extracted by the AI — it's derived
-     * from date_start by the calling component, since it's pure date logic.
-     *
      * Returns a normalized array:
      * [
      *   'success'         => bool,
@@ -156,8 +284,6 @@ class AiService
      */
     public function structureEvent(string $rawText): array
     {
-        $today = date('Y-m-d');
-
         $prompt = <<<PROMPT
         You are a metadata extraction assistant for an academic/professional portfolio.
         Extract structured event data from the text below.
@@ -180,53 +306,37 @@ class AiService
         PROMPT;
 
         try {
-            $model = config('services.gemini.model');
+            $data = $this->decodeJson($this->runPrompt($prompt));
 
-            $response = Prism::text()
-                ->using(Provider::Gemini, $model)
-                ->withPrompt($prompt)
-                ->asText()
-                ->text;
-
-            $clean = trim($response);
-            $clean = preg_replace('/^```(?:json)?\s*/i', '', $clean);
-            $clean = preg_replace('/\s*```$/', '', $clean);
-
-            $data = json_decode($clean, true);
-
-            if (! is_array($data)) {
-                Log::warning('AiService: event JSON decode failed', ['raw' => $response]);
+            if ($data === null) {
+                Log::warning('AiService: event JSON decode failed');
                 return $this->eventFailure('AI returned an unreadable response — please fill the form manually.');
             }
 
             $warnings = [];
 
-            // --- Title ---
             $title = isset($data['title']) ? trim((string) $data['title']) : null;
-            if (! $title) {
+            if (!$title) {
                 $warnings[] = 'Could not extract an event title — please add one.';
             }
 
-            // --- date_start (required by your form) ---
             $dateStart = $this->normalizeDate($data['date_start'] ?? null);
-            if (! $dateStart) {
+            if (!$dateStart) {
                 $warnings[] = 'Could not determine a start date — please set it before saving.';
             }
 
-            // --- date_end (optional, must be >= start if present) ---
             $dateEnd = $this->normalizeDate($data['date_end'] ?? null);
             if ($dateEnd && $dateStart && $dateEnd < $dateStart) {
                 $warnings[] = 'AI returned an end date before the start date — cleared it; please check.';
                 $dateEnd = null;
             }
 
-            // --- is_virtual + location ---
             $isVirtual = (bool) ($data['is_virtual'] ?? false);
-            $location = isset($data['location']) ? trim((string) $data['location']) : null;
-            if (! $location && ! $isVirtual) {
+            $location  = isset($data['location']) ? trim((string) $data['location']) : null;
+            if (!$location && !$isVirtual) {
                 $warnings[] = 'No location found — your form requires one; please add it.';
             }
-            if ($isVirtual && ! $location) {
+            if ($isVirtual && !$location) {
                 $location = 'Virtual';
             }
 
@@ -245,44 +355,9 @@ class AiService
                 'message'        => 'AI filled the form below — review and edit before saving.',
             ];
         } catch (Throwable $e) {
-            Log::error('AiService: event structuring failed', [
-                'message' => $e->getMessage(),
-            ]);
-
+            Log::error('AiService: event structuring failed', ['message' => $e->getMessage()]);
             return $this->eventFailure('AI is busy right now — please fill the form manually.');
         }
-    }
-
-    /**
-     * Normalize a date string to 'Y-m-d', or null if unparseable / out of sane range.
-     */
-    private function normalizeDate($value): ?string
-    {
-        if (! $value || ! is_string($value)) {
-            return null;
-        }
-
-        try {
-            $date = \Carbon\Carbon::parse($value);
-        } catch (Throwable) {
-            return null;
-        }
-
-        // Sanity bound — reject obviously wrong years.
-        if ($date->year < 1950 || $date->year > 2100) {
-            return null;
-        }
-
-        return $date->format('Y-m-d');
-    }
-
-    private function cleanString($value): ?string
-    {
-        if (! is_string($value)) {
-            return null;
-        }
-        $value = trim($value);
-        return $value !== '' ? $value : null;
     }
 
     private function eventFailure(string $message): array
@@ -321,7 +396,7 @@ class AiService
     public function structureAchievement(string $rawText): array
     {
         $validCategories = array_map(fn ($c) => $c->value, \App\Enums\AchievementCategory::cases());
-        $categoryList = implode(', ', $validCategories);
+        $categoryList    = implode(', ', $validCategories);
 
         $prompt = <<<PROMPT
         You are a metadata extraction assistant for an academic/professional portfolio.
@@ -341,42 +416,27 @@ class AiService
         PROMPT;
 
         try {
-            $model = config('services.gemini.model');
+            $data = $this->decodeJson($this->runPrompt($prompt));
 
-            $response = Prism::text()
-                ->using(Provider::Gemini, $model)
-                ->withPrompt($prompt)
-                ->asText()
-                ->text;
-
-            $clean = trim($response);
-            $clean = preg_replace('/^```(?:json)?\s*/i', '', $clean);
-            $clean = preg_replace('/\s*```$/', '', $clean);
-
-            $data = json_decode($clean, true);
-
-            if (! is_array($data)) {
-                Log::warning('AiService: achievement JSON decode failed', ['raw' => $response]);
+            if ($data === null) {
+                Log::warning('AiService: achievement JSON decode failed');
                 return $this->achievementFailure('AI returned an unreadable response — please fill the form manually.');
             }
 
             $warnings = [];
 
-            // --- Title ---
             $title = isset($data['title']) ? trim((string) $data['title']) : null;
-            if (! $title) {
+            if (!$title) {
                 $warnings[] = 'Could not extract a title — please add one.';
             }
 
-            // --- Category against the real enum ---
             $rawCategory = $data['category'] ?? null;
-            $category = \App\Enums\AchievementCategory::tryFrom((string) $rawCategory)?->value;
-            if (! $category) {
-                $warnings[] = "AI suggested an unrecognized category" . ($rawCategory ? " (\"{$rawCategory}\")" : '') . " — defaulted to \"Award\"; please confirm.";
+            $category    = \App\Enums\AchievementCategory::tryFrom((string) $rawCategory)?->value;
+            if (!$category) {
+                $warnings[] = 'AI suggested an unrecognized category' . ($rawCategory ? " (\"{$rawCategory}\")" : '') . ' — defaulted to "Award"; please confirm.';
                 $category = \App\Enums\AchievementCategory::Award->value;
             }
 
-            // --- Year ---
             $year = null;
             if (isset($data['year']) && is_numeric($data['year'])) {
                 $year = (int) $data['year'];
@@ -388,9 +448,8 @@ class AiService
                 $warnings[] = 'Could not determine the year — please add it.';
             }
 
-            // --- Description ---
             $description = isset($data['description']) ? trim((string) $data['description']) : null;
-            if (! $description || strlen($description) < 5) {
+            if (!$description || strlen($description) < 5) {
                 $warnings[] = 'Description is missing or too short — please review.';
             }
 
@@ -405,10 +464,7 @@ class AiService
                 'message'      => 'AI filled the form below — review and edit before saving.',
             ];
         } catch (Throwable $e) {
-            Log::error('AiService: achievement structuring failed', [
-                'message' => $e->getMessage(),
-            ]);
-
+            Log::error('AiService: achievement structuring failed', ['message' => $e->getMessage()]);
             return $this->achievementFailure('AI is busy right now — please fill the form manually.');
         }
     }
@@ -426,22 +482,22 @@ class AiService
             'message'      => $message,
         ];
     }
+
     /**
      * Read an uploaded PDF and structure its metadata into publication form fields.
      *
-     * @param string $pdfPath  Absolute path to the PDF on disk (e.g. the Livewire
-     *                         temporary upload's real path).
+     * @param string $pdfPath  Absolute path to the PDF on disk.
      *
      * Returns the same normalized shape as structurePublication().
      */
     public function structurePublicationFromPdf(string $pdfPath): array
     {
-        if (! is_file($pdfPath)) {
+        if (!is_file($pdfPath)) {
             return $this->failure('Could not read the uploaded file — please try again or fill the form manually.');
         }
 
         $validTypes = array_map(fn ($c) => $c->value, PublicationType::cases());
-        $typeList = implode(', ', $validTypes);
+        $typeList   = implode(', ', $validTypes);
 
         $prompt = <<<PROMPT
         You are a metadata extraction assistant for an academic portfolio.
@@ -458,38 +514,24 @@ class AiService
         PROMPT;
 
         try {
-            $model = config('services.gemini.model');
+            $data = $this->decodeJson($this->runPromptWithDocument($prompt, $pdfPath));
 
-            $response = Prism::text()
-                ->using(Provider::Gemini, $model)
-                ->withPrompt($prompt, [
-                    \Prism\Prism\ValueObjects\Media\Document::fromLocalPath($pdfPath),
-                ])
-                ->asText()
-                ->text;
-
-            $clean = trim($response);
-            $clean = preg_replace('/^```(?:json)?\s*/i', '', $clean);
-            $clean = preg_replace('/\s*```$/', '', $clean);
-
-            $data = json_decode($clean, true);
-
-            if (! is_array($data)) {
-                Log::warning('AiService: publication PDF JSON decode failed', ['raw' => $response]);
+            if ($data === null) {
+                Log::warning('AiService: publication PDF JSON decode failed');
                 return $this->failure('AI could not read structured data from that PDF — please fill the form manually.');
             }
 
             $warnings = [];
 
             $title = isset($data['title']) ? trim((string) $data['title']) : null;
-            if (! $title) {
+            if (!$title) {
                 $warnings[] = 'Could not extract a title from the PDF — please add one.';
             }
 
             $rawType = $data['type'] ?? null;
-            $type = PublicationType::tryFrom((string) $rawType)?->value;
-            if (! $type) {
-                $warnings[] = "AI suggested an unrecognized type" . ($rawType ? " (\"{$rawType}\")" : '') . " — defaulted to the first type; please confirm.";
+            $type    = PublicationType::tryFrom((string) $rawType)?->value;
+            if (!$type) {
+                $warnings[] = 'AI suggested an unrecognized type' . ($rawType ? " (\"{$rawType}\")" : '') . ' — defaulted to the first type; please confirm.';
                 $type = $validTypes[0] ?? null;
             }
 
@@ -505,7 +547,7 @@ class AiService
             }
 
             $abstract = isset($data['abstract']) ? trim((string) $data['abstract']) : null;
-            if (! $abstract || strlen($abstract) < 10) {
+            if (!$abstract || strlen($abstract) < 10) {
                 $warnings[] = 'Abstract is missing or too short — please review.';
             }
 
@@ -519,11 +561,41 @@ class AiService
                 'message'  => 'AI read the PDF and filled the form below — review and edit before saving.',
             ];
         } catch (Throwable $e) {
-            Log::error('AiService: publication PDF structuring failed', [
-                'message' => $e->getMessage(),
-            ]);
-
+            Log::error('AiService: publication PDF structuring failed', ['message' => $e->getMessage()]);
             return $this->failure('AI is busy right now — please fill the form manually.');
         }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /** Normalize a date string to 'Y-m-d', or null if unparseable / out of sane range. */
+    private function normalizeDate($value): ?string
+    {
+        if (!$value || !is_string($value)) {
+            return null;
+        }
+
+        try {
+            $date = \Carbon\Carbon::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
+
+        if ($date->year < 1950 || $date->year > 2100) {
+            return null;
+        }
+
+        return $date->format('Y-m-d');
+    }
+
+    private function cleanString($value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+        $value = trim($value);
+        return $value !== '' ? $value : null;
     }
 }
