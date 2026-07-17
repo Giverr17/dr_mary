@@ -24,39 +24,42 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withExceptions(function (Exceptions $exceptions): void {
         // ── AI / Prism exceptions ────────────────────────────────────────────
         // Prevent any Prism failure from bubbling up as a generic HTTP 500.
-        // Livewire (AJAX) callers get a JSON error; regular browser requests
-        // are redirected back with a flash message the blade can display.
+        // Laravel 11 uses reflection on the closure's first parameter type to
+        // determine which exception each renderer handles — the type-hint is
+        // therefore required (a generic $e without a hint throws RuntimeException).
+        //
+        // Livewire / AJAX callers get a JSON error body; regular browser
+        // requests are redirected back with a flash message.
 
-        $aiExceptions = [
-            PrismRateLimitedException::class,
-            PrismProviderOverloadedException::class,
-            PrismServerException::class,
-            PrismRequestTooLargeException::class,
-        ];
+        $exceptions->render(function (PrismRateLimitedException $e, $request) {
+            $message = 'The AI is busy (rate limited). Please wait a moment and try again.';
+            if ($request->expectsJson() || $request->header('X-Livewire')) {
+                return response()->json(['message' => $message], 429);
+            }
+            return back()->withInput()->with('ai_error', $message);
+        });
 
-        foreach ($aiExceptions as $exceptionClass) {
-            $exceptions->render(function ($e, $request) use ($exceptionClass) {
-                if (!($e instanceof $exceptionClass)) {
-                    return null; // let other handlers run
-                }
+        $exceptions->render(function (PrismProviderOverloadedException $e, $request) {
+            $message = 'The AI service is overloaded. Please try again shortly.';
+            if ($request->expectsJson() || $request->header('X-Livewire')) {
+                return response()->json(['message' => $message], 503);
+            }
+            return back()->withInput()->with('ai_error', $message);
+        });
 
-                $status  = $e instanceof PrismRateLimitedException ? 429 : 503;
-                $message = match (true) {
-                    $e instanceof PrismRateLimitedException        => 'The AI is busy (rate limited). Please wait a moment and try again.',
-                    $e instanceof PrismProviderOverloadedException => 'The AI service is overloaded. Please try again shortly.',
-                    $e instanceof PrismRequestTooLargeException    => 'Your request was too large for the AI. Please shorten the input.',
-                    default                                        => 'The AI service had a temporary error. Please try again.',
-                };
+        $exceptions->render(function (PrismRequestTooLargeException $e, $request) {
+            $message = 'Your request was too large for the AI. Please shorten the input.';
+            if ($request->expectsJson() || $request->header('X-Livewire')) {
+                return response()->json(['message' => $message], 503);
+            }
+            return back()->withInput()->with('ai_error', $message);
+        });
 
-                // JSON response for Livewire / AJAX requests
-                if ($request->expectsJson() || $request->header('X-Livewire')) {
-                    return response()->json(['message' => $message], $status);
-                }
-
-                // Redirect-back for normal browser requests
-                return back()
-                    ->withInput()
-                    ->with('ai_error', $message);
-            });
-        }
+        $exceptions->render(function (PrismServerException $e, $request) {
+            $message = 'The AI service had a temporary error. Please try again.';
+            if ($request->expectsJson() || $request->header('X-Livewire')) {
+                return response()->json(['message' => $message], 503);
+            }
+            return back()->withInput()->with('ai_error', $message);
+        });
     })->create();
