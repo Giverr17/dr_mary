@@ -151,6 +151,15 @@ new class extends Component
             }
         }
 
+        if ($platform === 'apple') {
+            if (str_contains($url, 'podcasts.apple.com/')) {
+                if (str_contains($url, 'embed.podcasts.apple.com/')) {
+                    return $url;
+                }
+                return str_replace('podcasts.apple.com/', 'embed.podcasts.apple.com/', $url);
+            }
+        }
+
         if ($platform === 'vimeo') {
             if (preg_match('/vimeo\.com\/([0-9]+)/i', $url, $match)) {
                 return "https://player.vimeo.com/video/" . $match[1];
@@ -195,9 +204,9 @@ new class extends Component
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <label class="text-xs font-bold text-navy uppercase tracking-widest">Audio Replay Link / URL (Optional)</label>
-                            <span class="text-[10px] text-slate-400 font-bold uppercase">Spotify Episode URL</span>
+                            <span class="text-[10px] text-slate-400 font-bold uppercase">Spotify or Apple Podcasts URL</span>
                         </div>
-                        <input wire:model.live.debounce.300ms="audio_url" type="url" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. https://open.spotify.com/episode/..." />
+                        <input wire:model.live.debounce.300ms="audio_url" type="url" class="w-full px-4 py-2 rounded-lg border border-slate-200 focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. Spotify or Apple Podcasts episode URL..." />
                         @error('audio_url') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -289,7 +298,7 @@ new class extends Component
                 @else
                     <div class="border border-dashed border-white/20 rounded-xl p-8 text-center text-white/40 flex flex-col items-center justify-center gap-3">
                         <span class="material-symbols-outlined text-4xl text-white/20 animate-pulse">play_circle</span>
-                        <p class="text-sm font-semibold">Enter a valid YouTube or Spotify link to see player preview here.</p>
+                        <p class="text-sm font-semibold">Enter a valid YouTube, Spotify or Apple Podcasts link to see player preview here.</p>
                         <p class="text-[10px] text-white/30 max-w-[200px]">URLs must start with http:// or https://</p>
                     </div>
                 @endif

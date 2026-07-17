@@ -199,10 +199,22 @@
                                 </a>
                                 @endif
                                 @if($media->audio_url)
-                                <a x-show="activeTab === 'audio'" href="{{ $media->audio_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl transition-all duration-200 border bg-emerald-50 text-emerald-700 border-emerald-200/50 hover:bg-emerald-100 hover:border-emerald-300">
-                                    <span class="material-symbols-outlined text-sm">open_in_new</span>
-                                    Listen on Spotify
-                                </a>
+                                    @if($media->platform === 'spotify')
+                                    <a x-show="activeTab === 'audio'" href="{{ $media->audio_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl transition-all duration-200 border bg-emerald-50 text-emerald-700 border-emerald-200/50 hover:bg-emerald-100 hover:border-emerald-300">
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                        Listen on Spotify
+                                    </a>
+                                    @elseif($media->platform === 'apple')
+                                    <a x-show="activeTab === 'audio'" href="{{ $media->audio_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl transition-all duration-200 border bg-purple-50 text-purple-700 border-purple-200/50 hover:bg-purple-100 hover:border-purple-300">
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                        Listen on Apple Podcasts
+                                    </a>
+                                    @else
+                                    <a x-show="activeTab === 'audio'" href="{{ $media->audio_url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-xl transition-all duration-200 border bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100 hover:border-slate-300">
+                                        <span class="material-symbols-outlined text-sm">open_in_new</span>
+                                        Listen on {{ $media->platform === 'other' ? 'Audio Replay' : ucfirst($media->platform) }}
+                                    </a>
+                                    @endif
                                 @endif
                             </div>
                         </div>

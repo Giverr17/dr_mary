@@ -65,6 +65,9 @@ class MediaArchive extends Model
         if (str_contains($url, 'vimeo.com')) {
             return 'vimeo';
         }
+        if (str_contains($url, 'podcasts.apple.com') || str_contains($url, 'podcast.apple.com')) {
+            return 'apple';
+        }
 
         return 'other';
     }
@@ -99,6 +102,16 @@ class MediaArchive extends Model
             }
         }
 
+        if ($platform === 'apple') {
+            // Apple Podcasts link: https://podcasts.apple.com/...
+            if (str_contains($url, 'podcasts.apple.com/')) {
+                if (str_contains($url, 'embed.podcasts.apple.com/')) {
+                    return $url;
+                }
+                return str_replace('podcasts.apple.com/', 'embed.podcasts.apple.com/', $url);
+            }
+        }
+
         if ($platform === 'vimeo') {
             // Vimeo URL: https://vimeo.com/123456789
             if (preg_match('/vimeo\.com\/([0-9]+)/i', $url, $match)) {
@@ -125,6 +138,14 @@ class MediaArchive extends Model
                 return $url;
             }
             return str_replace('open.spotify.com/', 'open.spotify.com/embed/', $url);
+        }
+
+        // Apple Podcasts episode or show link: https://podcasts.apple.com/...
+        if (str_contains($url, 'podcasts.apple.com/')) {
+            if (str_contains($url, 'embed.podcasts.apple.com/')) {
+                return $url;
+            }
+            return str_replace('podcasts.apple.com/', 'embed.podcasts.apple.com/', $url);
         }
 
         return $url;
