@@ -78,6 +78,10 @@
                     <span class="material-symbols-outlined text-xl">handshake</span>
                     Services
                 </a>
+                <a href="/manage/testimonials" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-white/5 transition-colors {{ request()->is('manage/testimonials*') ? 'bg-white/10 text-primary' : '' }}">
+                    <span class="material-symbols-outlined text-xl">format_quote</span>
+                    Testimonials
+                </a>
                 
                 <div class="pt-4 pb-2 px-4 text-[10px] uppercase tracking-wider text-white/30 font-bold">Inbox</div>
                 
