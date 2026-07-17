@@ -45,15 +45,19 @@ class MediaArchive extends Model
         parent::boot();
 
         static::saving(function ($model) {
-            $model->platform = static::detectPlatform($model->embed_url);
+            $model->platform = static::detectPlatform($model->embed_url ?: $model->audio_url ?: '');
         });
     }
 
     /**
      * Detect platform from pasted URL.
      */
-    public static function detectPlatform(string $url): string
+    public static function detectPlatform(?string $url): string
     {
+        if (!$url) {
+            return 'other';
+        }
+
         $url = strtolower($url);
 
         if (str_contains($url, 'youtube.com') || str_contains($url, 'youtu.be') || str_contains($url, 'youtube-nocookie.com')) {
@@ -75,9 +79,13 @@ class MediaArchive extends Model
     /**
      * Get processed clean embed URL suitable for inside an iframe.
      */
-    public function getCleanEmbedUrlAttribute(): string
+    public function getCleanEmbedUrlAttribute(): ?string
     {
         $url = $this->embed_url;
+        if (!$url) {
+            return null;
+        }
+
         $platform = $this->platform;
 
         if ($platform === 'youtube') {
