@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
@@ -147,6 +147,45 @@
                 {{ $slot }}
             </div>
         </main>
+    </div>
+    <!-- Toast Notification System -->
+    <div x-data="{ 
+            show: false, 
+            message: '', 
+            timeout: null 
+         }" 
+         x-on:notify.window="
+            let raw = $event.detail;
+            if (typeof raw === 'string') {
+                message = raw;
+            } else if (Array.isArray(raw) && raw.length > 0) {
+                message = raw[0];
+            } else if (raw && typeof raw === 'object') {
+                message = raw.message || raw[0] || JSON.stringify(raw);
+            } else {
+                message = 'Success!';
+            }
+            show = true;
+            clearTimeout(timeout);
+            timeout = setTimeout(() => show = false, 4000);
+         "
+         x-show="show"
+         x-transition:enter="transition ease-out duration-300 transform"
+         x-transition:enter-start="translate-y-2 opacity-0 sm:translate-y-0 sm:translate-x-2"
+         x-transition:enter-end="translate-y-0 opacity-100 sm:translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed bottom-5 right-5 z-50 max-w-md w-full sm:w-auto bg-navy border border-primary/20 text-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 backdrop-blur-sm bg-navy/95 select-none"
+         x-cloak
+    >
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+            <span class="material-symbols-outlined text-lg">check_circle</span>
+        </div>
+        <div class="flex-1 text-sm font-medium pr-4" x-text="message"></div>
+        <button @click="show = false" class="text-white/40 hover:text-white transition-colors flex">
+            <span class="material-symbols-outlined text-sm">close</span>
+        </button>
     </div>
 
     @livewireScripts
