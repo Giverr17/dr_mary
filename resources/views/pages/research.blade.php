@@ -57,7 +57,7 @@
                             </div>
                             <h4 class="text-xl font-bold text-navy mb-4 leading-snug">{{ $publication->title }}</h4>
                             <p class="text-slate-600 text-sm leading-relaxed mb-8 flex-1 italic">
-                                "{{ $publication->abstract }}"
+                                {{ $publication->abstract }}
                             </p>
                             @if($publication->pdf_path)
                             <a href="{{ Storage::url($publication->pdf_path) }}" class="flex items-center gap-2 text-navy font-bold text-sm hover:text-primary transition-colors mt-auto">

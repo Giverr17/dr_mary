@@ -79,7 +79,6 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 @foreach($testimonials as $testimonial)
                 <div class="p-10 rounded-3xl bg-slate-50 border border-slate-100 relative">
-                    <span class="material-symbols-outlined text-primary/20 text-6xl absolute top-6 right-8">format_quote</span>
                     <p class="text-slate-700 text-lg italic leading-relaxed mb-8 relative z-10">
                         "{{ $testimonial->quote }}"
                     </p>

@@ -46,6 +46,7 @@ Route::middleware(['auth', 'admin'])->prefix('manage')->name('admin.')->group(fu
     Route::get('/events/{event}/registrations/pdf', [\App\Http\Controllers\Admin\EventRegistrationController::class, 'exportPdf'])->name('events.registrations.pdf');
     Route::get('/services', function () { return view('manage.services'); })->name('services');
     Route::get('/testimonials', function () { return view('manage.testimonials'); })->name('testimonials');
+    Route::get('/credentials', function () { return view('manage.credentials'); })->name('credentials');
     Route::get('/messages', function () { return view('manage.messages'); })->name('messages');
     Route::get('/newsletter', function () { return view('manage.newsletter'); })->name('newsletter');
 });

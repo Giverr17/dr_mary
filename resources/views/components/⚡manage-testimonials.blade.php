@@ -130,8 +130,6 @@ new class extends Component
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
         @forelse($testimonials as $testimonial)
         <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm relative group flex flex-col justify-between">
-            <span class="material-symbols-outlined text-primary/10 text-6xl absolute bottom-6 right-8 pointer-events-none z-0">format_quote</span>
-            
             <div class="relative z-10 flex-1">
                 <div class="flex justify-between items-start mb-6">
                     <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest bg-slate-100 px-2.5 py-1 rounded-full">Order: {{ $testimonial->order }}</span>
@@ -157,7 +155,7 @@ new class extends Component
         </div>
         @empty
         <div class="col-span-2 bg-white p-12 text-center rounded-3xl border border-slate-200 shadow-sm text-slate-400">
-            <span class="material-symbols-outlined text-4xl mb-2 block">format_quote</span>
+            <span class="material-symbols-outlined text-4xl mb-2 block">rate_review</span>
             No testimonials added yet. Click "Add New Testimonial" to create one.
         </div>
         @endforelse
