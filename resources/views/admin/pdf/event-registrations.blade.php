@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
     <title>Event Registrations - {{ $event->title }}</title>
@@ -15,7 +15,7 @@
 <body>
     <div class="header">
         <h1>Event Registration Report</h1>
-        <p>Dr. Uhunoma M. Isibor Management Portal</p>
+        <p>Dr. Mary Management Portal</p>
     </div>
 
     <div class="event-info">

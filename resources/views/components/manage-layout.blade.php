@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Dashboard — Dr. Uhunoma</title>
+    <title>Admin Dashboard — Dr. Mary</title>
 
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
@@ -30,7 +30,7 @@
         >
             <div class="p-6 border-b border-white/10 flex items-center justify-between">
                 <div>
-                    <a href="/manage" class="text-xl font-display font-bold text-primary">Dr. Uhunoma</a>
+                    <a href="/manage" class="text-xl font-display font-bold text-primary">Dr. Mary</a>
                     <p class="text-xs text-white/40 mt-1">Management Portal</p>
                 </div>
                 <button @click="sidebarOpen = false" class="lg:hidden text-white/60 hover:text-white">

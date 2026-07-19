@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 namespace App\Http\Controllers;
 
@@ -25,7 +25,7 @@ class SubscribeController extends Controller
                 ['subscribed_at' => now()]
             );
 
-            // Optional: Still notify Dr. Uhunoma
+            // Optional: Still notify Dr. Mary
             Mail::to($recipient)->send(new SubscribeNotification($data['email']));
 
             return response()->json(['message' => 'Thanks! You have been subscribed.'], 200);

@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Livewire\Component;
 use Livewire\Attributes\Validate;
@@ -57,7 +57,7 @@ new class extends Component
                 <span class="material-symbols-outlined text-primary">check_circle</span>
                 <span class="font-bold text-lg">Message Sent Successfully!</span>
             </div>
-            <p class="text-sm opacity-80">Thank you for reaching out, Dr. Uhunoma. We will get back to you shortly.</p>
+            <p class="text-sm opacity-80">Thank you for reaching out, Dr. Mary. We will get back to you shortly.</p>
             <button wire:click="$set('success', false)" class="mt-4 text-xs font-bold uppercase tracking-widest hover:underline">Send another message</button>
         </div>
     @else

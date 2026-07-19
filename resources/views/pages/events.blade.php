@@ -1,5 +1,5 @@
-<x-app-layout>
-    <x-slot name="title">Events — Dr. Uhunoma M. Isibor</x-slot>
+﻿<x-app-layout>
+    <x-slot name="title">Events — Dr. Mary</x-slot>
 
     <!-- Header Section -->
     <section class="py-20 px-6 bg-navy text-white text-center">
@@ -7,7 +7,7 @@
             <span class="text-primary font-bold tracking-widest uppercase text-sm mb-4 block">Engagements & Speaking</span>
             <h1 class="text-4xl md:text-5xl font-display font-bold mb-6">Upcoming & Past Events</h1>
             <p class="text-gray-400 text-lg md:text-xl font-light max-w-2xl mx-auto">
-                Join Dr. Uhunoma at global summits, workshops, and policy forums.
+                Join Dr. Mary at global summits, workshops, and policy forums.
             </p>
         </div>
     </section>

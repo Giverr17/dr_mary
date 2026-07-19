@@ -4,9 +4,9 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Dr. Uhunoma M. Isibor — Historian, Scholar, Consultant</title>
+    <title>Dr. Mary — Historian, Scholar, Consultant</title>
     <meta name="description"
-        content="Dr. Uhunoma M. Isibor — empowering Black women entrepreneurs through research, strategy, and policy engagement in Canada and Africa." />
+        content="Dr. Mary — empowering Black women entrepreneurs through research, strategy, and policy engagement in Canada and Africa." />
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
@@ -77,8 +77,7 @@
         <div class="px-6 h-16 flex items-center justify-between max-w-7xl mx-auto">
             <div class="flex items-center gap-2">
                 <a href="index.html"
-                    class="text-xl md:text-2xl font-display font-bold text-primary tracking-tight hover:text-primary/80 transition-colors">Dr.
-                    Uhunoma</a>
+                    class="text-xl md:text-2xl font-display font-bold text-primary tracking-tight hover:text-primary/80 transition-colors">Dr. Mary</a>
             </div>
             <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-200">
                 <a class="hover:text-primary transition-colors" href="about.html">About</a>
@@ -143,9 +142,9 @@
                 <div class="order-1 md:order-2 flex justify-center md:justify-end">
                     <div
                         class="relative w-64 h-64 md:w-96 md:h-96 rounded-full overflow-hidden border-4 border-primary shadow-2xl">
-                        <img alt="Professional portrait of Dr. Uhunoma smiling warmly in business attire"
+                        <img alt="Professional portrait of Dr. Mary smiling warmly in business attire"
                             class="w-full h-full object-cover"
-                            data-alt="Professional portrait of Dr. Uhunoma smiling warmly in business attire"
+                            data-alt="Professional portrait of Dr. Mary smiling warmly in business attire"
                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGGf3XqrvS1TKv4qoWqcRV80PKSUfPAnlRKr_diiDg47s2jVhI4xC1O06FRinF6DbeMXsKuwl46yq9zn4lJ9Big_5KJQRxub-UpfpVLQoZOj3Zr-ceD6bKjDSW7H1kVX6SJ74H1LJrcFv-0MxtzbUby2dh5Ue_b1kpfDUazTb0ZivJcYTgUCJ7iNqdakb6EF_SMy21EswsZrV64R-F1bqSJwhvoGcQM05Sj4JFGeEEx9Jip4FDq3ACn_ZOw5--xVYFJamLpHPx143M" />
                     </div>
                 </div>
@@ -177,7 +176,7 @@
             <div class="max-w-3xl mx-auto text-center flex flex-col gap-6">
                 <h2 class="text-3xl font-display font-bold text-navy">Bridging the Gap</h2>
                 <p class="text-slate-700 text-lg md:text-xl font-body leading-relaxed">
-                    Dr. Uhunoma M. Isibor is a dedicated scholar-consultant bridging the gap between historical insights
+                    Dr. Mary is a dedicated scholar-consultant bridging the gap between historical insights
                     and modern entrepreneurship. With a focus on Black women's economic empowerment, she translates
                     rigorous academic research into actionable policy strategies. Her work fosters sustainable growth
                     and equitable opportunities across Canada and the African continent.
@@ -187,7 +186,7 @@
                         class="inline-flex items-center gap-2 text-navy font-semibold hover:text-primary transition-colors group">
                         <a href="about.html"
                             class="inline-flex items-center gap-2 text-navy font-semibold hover:text-primary transition-colors">Read
-                            Dr. Uhunoma's Full Bio</a>
+                            Dr. Mary's Full Bio</a>
                         <span
                             class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
                     </button>
@@ -400,8 +399,7 @@
             <div class="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
                 <div class="col-span-1 md:col-span-1">
                     <a href="index.html"
-                        class="text-xl font-display font-bold text-navy mb-4 block hover:text-primary transition-colors">Dr.
-                        Uhunoma</a>
+                        class="text-xl font-display font-bold text-navy mb-4 block hover:text-primary transition-colors">Dr. Mary</a>
                     <p class="text-sm text-slate-500 leading-relaxed mb-6">
                         Bridging the gap between academic research and actionable business strategies for a more
                         equitable future.
@@ -420,7 +418,7 @@
                 <div>
                     <h4 class="font-bold text-navy mb-6 font-display text-lg">Quick Links</h4>
                     <ul class="space-y-3 text-sm text-slate-600">
-                        <li><a class="hover:text-primary transition-colors" href="about.html">About Dr. Uhunoma</a></li>
+                        <li><a class="hover:text-primary transition-colors" href="about.html">About Dr. Mary</a></li>
                         <li><a class="hover:text-primary transition-colors" href="research.html">Research &amp;
                                 Publications</a></li>
                         <li><a class="hover:text-primary transition-colors" href="consulting.html">Consulting
@@ -455,7 +453,7 @@
                 </div>
             </div>hite/60">© 202
             <div class="bg-navy py-6 text-center">
-                <p class="text-xs text-w5 Dr. Uhunoma M. Isibor. All rights reserved.</p>
+                <p class="text-xs text-w5 Dr. Mary. All rights reserved.</p>
             </div>
         </footer>
     </main>

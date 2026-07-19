@@ -33,8 +33,7 @@
     <div class="max-w-7xl mx-auto px-6 py-16 grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
         <div class="col-span-1 md:col-span-1">
             <a href="/"
-                class="text-xl font-display font-bold text-navy mb-4 block hover:text-primary transition-colors">Dr.
-                Uhunoma</a>
+                class="text-xl font-display font-bold text-navy mb-4 block hover:text-primary transition-colors">Dr. Mary</a>
             <p class="text-sm text-slate-500 leading-relaxed mb-6">
                 {{ $profile?->footer_tagline ?? 'Bridging the gap between academic research and actionable business strategies for a more equitable future.' }}
             </p>
@@ -70,7 +69,7 @@
         <div>
             <h4 class="font-bold text-navy mb-6 font-display text-lg">Quick Links</h4>
             <ul class="space-y-3 text-sm text-slate-600">
-                <li><a class="hover:text-primary transition-colors" href="/about">About Dr. Uhunoma</a></li>
+                <li><a class="hover:text-primary transition-colors" href="/about">About Dr. Mary</a></li>
                 <li><a class="hover:text-primary transition-colors" href="/research">Research &amp;
                         Publications</a></li>
                 <li><a class="hover:text-primary transition-colors" href="/consulting">Consulting
@@ -110,7 +109,7 @@
     </div>
     <div class="bg-navy py-6 text-center">
         <p class="text-xs text-white/60">
-            © {{ date('Y') }} Dr. Uhunoma M. Isibor. All rights reserved. 
+            © {{ date('Y') }} Dr. Mary. All rights reserved. 
             <span class="mx-2 opacity-30">|</span> 
             <a href="/manage" class="hover:text-primary transition-colors">Admin Portal</a>
         </p>

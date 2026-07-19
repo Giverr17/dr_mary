@@ -1,5 +1,5 @@
-<x-app-layout>
-    <x-slot name="title">Consulting — Dr. Uhunoma M. Isibor</x-slot>
+﻿<x-app-layout>
+    <x-slot name="title">Consulting — Dr. Mary</x-slot>
 
     <!-- Header Section -->
     <section class="py-20 px-6 bg-navy text-white text-center">

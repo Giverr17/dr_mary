@@ -1,6 +1,6 @@
-@use('Illuminate\Support\Facades\Storage')
+﻿@use('Illuminate\Support\Facades\Storage')
 <x-app-layout>
-    <x-slot name="title">Contact — Dr. Uhunoma M. Isibor</x-slot>
+    <x-slot name="title">Contact — Dr. Mary</x-slot>
 
 
     <!-- Header Section -->

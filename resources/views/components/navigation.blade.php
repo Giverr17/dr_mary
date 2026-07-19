@@ -3,7 +3,7 @@
         <div class="flex items-center gap-2">
             <a href="/"
                 class="text-xl md:text-2xl font-display font-bold text-primary tracking-tight hover:text-primary/80 transition-colors">Dr.
-                Uhunoma</a>
+                Mary</a>
         </div>
         <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-200">
             <a class="hover:text-primary transition-colors" href="/about">About</a>

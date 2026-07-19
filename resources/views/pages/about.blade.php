@@ -1,11 +1,11 @@
-@use('Illuminate\Support\Facades\Storage')
+﻿@use('Illuminate\Support\Facades\Storage')
 <x-app-layout>
-    <x-slot name="title">About — Dr. Uhunoma M. Isibor</x-slot>
+    <x-slot name="title">About — Dr. Mary</x-slot>
 
     <!-- Header Section -->
     <section class="py-20 px-6 bg-navy text-white text-center">
         <div class="max-w-4xl mx-auto">
-            <span class="text-primary font-bold tracking-widest uppercase text-sm mb-4 block">Meet Dr. Uhunoma</span>
+            <span class="text-primary font-bold tracking-widest uppercase text-sm mb-4 block">Meet Dr. Mary</span>
             <h1 class="text-4xl md:text-5xl font-display font-bold mb-6">Bridging Research & Strategy</h1>
             <p class="text-gray-400 text-lg md:text-xl font-light max-w-2xl mx-auto">
                 Dedicated to empowering Black women entrepreneurs and advancing inclusive growth models.
@@ -39,7 +39,7 @@
             </div>
             <div class="relative group">
                 <div class="absolute -inset-4 bg-primary/10 rounded-2xl group-hover:bg-primary/20 transition-colors"></div>
-                <img src="{{ $profile->photo_path ? Storage::url($profile->photo_path) : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800' }}" alt="Dr. Uhunoma" class="relative rounded-xl w-full h-[600px] object-cover shadow-2xl" />
+                <img src="{{ $profile->photo_path ? Storage::url($profile->photo_path) : 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800' }}" alt="Dr. Mary" class="relative rounded-xl w-full h-[600px] object-cover shadow-2xl" />
             </div>
         </div>
     </section>

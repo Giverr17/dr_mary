@@ -1,6 +1,6 @@
-@use('Illuminate\Support\Facades\Storage')
+﻿@use('Illuminate\Support\Facades\Storage')
 <x-app-layout>
-    <x-slot name="title">Research — Dr. Uhunoma M. Isibor</x-slot>
+    <x-slot name="title">Research — Dr. Mary</x-slot>
 
     <!-- Header Section -->
     <section class="py-20 px-6 bg-navy text-white text-center">

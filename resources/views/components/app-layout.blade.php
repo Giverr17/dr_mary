@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Dr. Uhunoma M. Isibor' }}</title>
-    <meta name="description" content="@yield('description', 'Dr. Uhunoma M. Isibor — Historian, Scholar, Consultant')">
+    <title>{{ $title ?? 'Dr. Mary' }}</title>
+    <meta name="description" content="@yield('description', 'Dr. Mary — Historian, Scholar, Consultant')">
 
     <!-- Fonts -->
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" as="style" />
